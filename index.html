@@ -5,52 +5,104 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced Loan Calculator</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>Advanced Loan Calculator</h1>
-        <form id="loan-form">
-            <div class="form-group">
-                <label for="amount">Loan Amount ($):</label>
-                <input type="number" id="amount" min="1" required>
-            </div>
-            <div class="form-group">
-                <label for="interest">Annual Interest Rate (%):</label>
-                <input type="number" id="interest" min="0" step="0.1" required>
-            </div>
-            <div class="form-group">
-                <label for="years">Loan Term (years):</label>
-                <input type="number" id="years" min="1" required>
-            </div>
-            <div class="form-group">
-                <label for="extra-payment">Extra Monthly Payment ($):</label>
-                <input type="number" id="extra-payment" min="0" value="0">
-            </div>
-            <button type="submit">Calculate</button>
-        </form>
-        <div id="results" class="hidden">
-            <h2>Results</h2>
-            <div id="monthly-payment"></div>
-            <div id="total-payment"></div>
-            <div id="total-interest"></div>
-            <div id="payoff-date"></div>
-            <div id="savings"></div>
-        </div>
-        <div id="amortization-schedule" class="hidden">
-            <h2>Amortization Schedule</h2>
-            <table id="schedule-table">
-                <thead>
-                    <tr>
-                        <th>Month</th>
-                        <th>Payment</th>
-                        <th>Principal</th>
-                        <th>Interest</th>
-                        <th>Balance</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
+        <header>
+            <h1>Advanced Loan Calculator</h1>
+        </header>
+        <main>
+            <section id="input-section">
+                <form id="loan-form">
+                    <div class="form-group">
+                        <label for="amount">Loan Amount ($):</label>
+                        <input type="number" id="amount" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="interest">Annual Interest Rate (%):</label>
+                        <input type="number" id="interest" min="0" step="0.1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="years">Loan Term (years):</label>
+                        <input type="number" id="years" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="extra-payment">Extra Monthly Payment ($):</label>
+                        <input type="number" id="extra-payment" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="start-date">Loan Start Date:</label>
+                        <input type="date" id="start-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="payment-frequency">Payment Frequency:</label>
+                        <select id="payment-frequency">
+                            <option value="12">Monthly</option>
+                            <option value="26">Bi-weekly</option>
+                            <option value="52">Weekly</option>
+                        </select>
+                    </div>
+                    <button type="submit">Calculate</button>
+                </form>
+            </section>
+            
+            <section id="results" class="hidden">
+                <h2>Loan Summary</h2>
+                <div id="summary-grid">
+                    <div class="summary-item">
+                        <h3>Monthly Payment</h3>
+                        <p id="monthly-payment"></p>
+                    </div>
+                    <div class="summary-item">
+                        <h3>Total Payment</h3>
+                        <p id="total-payment"></p>
+                    </div>
+                    <div class="summary-item">
+                        <h3>Total Interest</h3>
+                        <p id="total-interest"></p>
+                    </div>
+                    <div class="summary-item">
+                        <h3>Payoff Date</h3>
+                        <p id="payoff-date"></p>
+                    </div>
+                </div>
+                <div id="savings"></div>
+            </section>
+            
+            <section id="charts" class="hidden">
+                <h2>Loan Breakdown</h2>
+                <div class="chart-container">
+                    <canvas id="payment-breakdown-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="balance-over-time-chart"></canvas>
+                </div>
+            </section>
+            
+            <section id="amortization-schedule" class="hidden">
+                <h2>Amortization Schedule</h2>
+                <div class="table-container">
+                    <table id="schedule-table">
+                        <thead>
+                            <tr>
+                                <th>Payment #</th>
+                                <th>Date</th>
+                                <th>Payment</th>
+                                <th>Principal</th>
+                                <th>Interest</th>
+                                <th>Extra Payment</th>
+                                <th>Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+        <footer>
+            <p>&copy; 2024 Advanced Loan Calculator v2. All rights reserved.</p>
+        </footer>
     </div>
     <script src="script.js"></script>
 </body>
