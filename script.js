@@ -175,4 +175,101 @@ document.addEventListener('DOMContentLoaded', function() {
             resultCard.innerHTML = `
                 <h3>Loan ${index + 1} Results</h3>
                 <p>Monthly Payment: $${result.monthlyPayment.toFixed(2)}</p>
-                <p>Total Interest: $${result.totalInterest.toFixe
+                <p>Total Interest: $${result.totalInterest.toFixed(2)}</p>
+                <p>Total Paid: $${result.totalPaid.toFixed(2)}</p>
+                <p>Loan Term: ${result.months} months (${(result.months / 12).toFixed(1)} years)</p>
+                <p>Tax Deduction: $${result.taxDeduction.toFixed(2)}</p>
+                <p>Effective Interest Rate: ${result.effectiveInterestRate.toFixed(2)}%</p>
+                <p>Real Cost of Loan: $${result.realCostOfLoan.toFixed(2)}</p>
+            `;
+            resultsContainer.appendChild(resultCard);
+        });
+    }
+
+    function renderCharts(results) {
+        renderBalanceChart(results);
+        renderPaymentChart(results);
+        renderInterestPrincipalChart(results);
+    }
+
+    function renderBalanceChart(results) {
+        const ctx = document.getElementById('balance-chart').getContext('2d');
+        const datasets = results.map((result, index) => ({
+            label: `Loan ${index + 1}`,
+            data: result.schedule.map(entry => entry.balance),
+            borderColor: getColor(index),
+            fill: false
+        }));
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: results[0].schedule.map(entry => entry.month),
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'Loan Balance Over Time'
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Month'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Balance ($)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderPaymentChart(results) {
+        const ctx = document.getElementById('payment-chart').getContext('2d');
+        const datasets = results.map((result, index) => ({
+            label: `Loan ${index + 1}`,
+            data: result.schedule.map(entry => entry.payment),
+            borderColor: getColor(index),
+            fill: false
+        }));
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: results[0].schedule.map(entry => entry.month),
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'Monthly Payments Over Time'
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Month'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Payment ($)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Initialize with one loan
+    addLoan();
+});
