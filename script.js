@@ -270,6 +270,98 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function renderInterestPrincipalChart(results) {
+        const ctx = document.getElementById('interest-principal-chart').getContext('2d');
+        const datasets = results.flatMap((result, index) => [
+            {
+                label: `Loan ${index + 1} - Principal`,
+                data: result.schedule.map(entry => entry.principal),
+                backgroundColor: getColor(index, 0.5),
+                stack: `Stack ${index}`
+            },
+            {
+                label: `Loan ${index + 1} - Interest`,
+                data: result.schedule.map(entry => entry.interest),
+                backgroundColor: getColor(index + results.length, 0.5),
+                stack: `Stack ${index}`
+            }
+        ]);
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: results[0].schedule.map(entry => entry.month),
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'Principal vs Interest Payments'
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        title: {
+                            display: true,
+                            text: 'Month'
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        title: {
+                            display: true,
+                            text: 'Amount ($)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderAmortizationSchedules(results) {
+        amortizationContainer.innerHTML = '';
+        results.forEach((result, index) => {
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <caption>Amortization Schedule for Loan ${index + 1}</caption>
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Payment</th>
+                        <th>Principal</th>
+                        <th>Interest</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${result.schedule.map(entry => `
+                        <tr>
+                            <td>${entry.month}</td>
+                            <td>$${entry.payment.toFixed(2)}</td>
+                            <td>$${entry.principal.toFixed(2)}</td>
+                            <td>$${entry.interest.toFixed(2)}</td>
+                            <td>$${entry.balance.toFixed(2)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+            amortizationContainer.appendChild(table);
+        });
+    }
+
+    function getColor(index, alpha = 1) {
+        const colors = [
+            `rgba(255, 99, 132, ${alpha})`,
+            `rgba(54, 162, 235, ${alpha})`,
+            `rgba(255, 206, 86, ${alpha})`,
+            `rgba(75, 192, 192, ${alpha})`,
+            `rgba(153, 102, 255, ${alpha})`,
+            `rgba(255, 159, 64, ${alpha})`
+        ];
+        return colors[index % colors.length];
+    }
+
     // Initialize with one loan
     addLoan();
 });
