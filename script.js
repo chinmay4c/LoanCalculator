@@ -1,242 +1,178 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('loan-form');
+    const loansContainer = document.getElementById('loans-container');
+    const addLoanButton = document.getElementById('add-loan');
     const resultsSection = document.getElementById('results');
+    const resultsContainer = document.getElementById('results-container');
     const chartsSection = document.getElementById('charts');
-    const amortizationSection = document.getElementById('amortization-schedule');
+    const amortizationSection = document.getElementById('amortization');
+    const amortizationContainer = document.getElementById('amortization-container');
 
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        calculateLoan();
-    });
+    let loans = [];
+    let loanId = 0;
 
-    // Set default date to today
-    document.getElementById('start-date').valueAsDate = new Date();
-});
+    addLoanButton.addEventListener('click', addLoan);
 
-function calculateLoan() {
-    const amount = parseFloat(document.getElementById('amount').value);
-    const annualInterestRate = parseFloat(document.getElementById('interest').value);
-    const years = parseInt(document.getElementById('years').value);
-    const extraPayment = parseFloat(document.getElementById('extra-payment').value) || 0;
-    const startDate = new Date(document.getElementById('start-date').value);
-    const paymentFrequency = parseInt(document.getElementById('payment-frequency').value);
-
-    const periodicInterestRate = (annualInterestRate / 100) / paymentFrequency;
-    const totalPayments = years * paymentFrequency;
-
-    if (amount > 0 && annualInterestRate > 0 && years > 0) {
-        const periodicPayment = calculatePeriodicPayment(amount, periodicInterestRate, totalPayments);
-        const schedule = generateAmortizationSchedule(amount, periodicInterestRate, totalPayments, periodicPayment, extraPayment, startDate, paymentFrequency);
-        
-        displayResults(schedule, periodicPayment, paymentFrequency);
-        createCharts(schedule);
-        displayAmortizationSchedule(schedule);
-    } else {
-        alert('Please enter valid values.');
+    function addLoan() {
+        loanId++;
+        const loan = {
+            id: loanId,
+            amount: 200000,
+            interestRate: 3.5,
+            term: 30,
+            extraPayment: 0
+        };
+        loans.push(loan);
+        renderLoanInputs(loan);
+        calculateAndRender();
     }
-}
 
-function calculatePeriodicPayment(principal, interestRate, payments) {
-    return (principal * interestRate * Math.pow(1 + interestRate, payments)) / (Math.pow(1 + interestRate, payments) - 1);
-}
+    function renderLoanInputs(loan) {
+        const loanCard = document.createElement('div');
+        loanCard.className = 'loan-card';
+        loanCard.innerHTML = `
+            <h3>Loan ${loan.id}</h3>
+            <div class="input-group">
+                <label for="amount-${loan.id}">Loan Amount ($)</label>
+                <input type="number" id="amount-${loan.id}" value="${loan.amount}" min="1000" step="1000">
+            </div>
+            <div class="input-group">
+                <label for="interest-${loan.id}">Interest Rate (%)</label>
+                <input type="number" id="interest-${loan.id}" value="${loan.interestRate}" min="0" max="30" step="0.1">
+            </div>
+            <div class="input-group">
+                <label for="term-${loan.id}">Loan Term (years)</label>
+                <input type="number" id="term-${loan.id}" value="${loan.term}" min="1" max="50">
+            </div>
+            <div class="input-group">
+                <label for="extra-${loan.id}">Extra Monthly Payment ($)</label>
+                <input type="number" id="extra-${loan.id}" value="${loan.extraPayment}" min="0" step="100">
+            </div>
+            <button class="btn remove-loan" data-id="${loan.id}">Remove Loan</button>
+        `;
+        loansContainer.appendChild(loanCard);
 
-function generateAmortizationSchedule(principal, interestRate, totalPayments, payment, extraPayment, startDate, paymentFrequency) {
-    let balance = principal;
-    let totalInterest = 0;
-    const schedule = [];
-    let paymentDate = new Date(startDate);
-
-    for (let i = 1; i <= totalPayments && balance > 0; i++) {
-        const interestPayment = balance * interestRate;
-        let principalPayment = payment - interestPayment;
-        const totalPayment = payment + extraPayment;
-
-        if (principalPayment + extraPayment > balance) {
-            principalPayment = balance;
-            extraPayment = 0;
-        }
-
-        balance -= (principalPayment + extraPayment);
-        totalInterest += interestPayment;
-
-        schedule.push({
-            paymentNumber: i,
-            date: new Date(paymentDate),
-            payment: totalPayment,
-            principal: principalPayment,
-            interest: interestPayment,
-            extraPayment: extraPayment,
-            balance: balance
+        loanCard.querySelectorAll('input').forEach(input => {
+            input.addEventListener('change', () => updateLoan(loan.id));
         });
 
-        // Update payment date based on frequency
-        switch(paymentFrequency) {
-            case 26: // Bi-weekly
-                paymentDate.setDate(paymentDate.getDate() + 14);
-                break;
-            case 52: // Weekly
-                paymentDate.setDate(paymentDate.getDate() + 7);
-                break;
-            default: // Monthly
-                paymentDate.setMonth(paymentDate.getMonth() + 1);
-        }
+        loanCard.querySelector('.remove-loan').addEventListener('click', () => removeLoan(loan.id));
 
-        if (balance <= 0) break;
+        anime({
+            targets: loanCard,
+            opacity: [0, 1],
+            translateY: [20, 0],
+            duration: 500,
+            easing: 'easeOutQuad'
+        });
     }
 
-    return schedule;
-}
-
-function displayResults(schedule, periodicPayment, paymentFrequency) {
-    const resultsSection = document.getElementById('results');
-    resultsSection.classList.remove('hidden');
-
-    const lastPayment = schedule[schedule.length - 1];
-    const totalPaid = schedule.reduce((sum, payment) => sum + payment.payment, 0);
-    const totalInterest = schedule.reduce((sum, payment) => sum + payment.interest, 0);
-
-    document.getElementById('periodic-payment').textContent = formatCurrency(periodicPayment);
-    document.getElementById('total-payment').textContent = formatCurrency(totalPaid);
-    document.getElementById('total-interest').textContent = formatCurrency(totalInterest);
-    document.getElementById('payoff-date').textContent = formatDate(lastPayment.date);
-
-    // Calculate and display savings
-    const originalPayments = parseInt(document.getElementById('years').value) * paymentFrequency;
-    const paymentsSaved = originalPayments - schedule.length;
-    const timeSaved = calculateTimeSaved(paymentsSaved, paymentFrequency);
-    const interestSaved = (periodicPayment * originalPayments) - totalPaid;
-
-    const savingsHTML = `
-        <h3>Potential Savings</h3>
-        <p>Time saved: ${timeSaved}</p>
-        <p>Interest saved: ${formatCurrency(interestSaved)}</p>
-    `;
-
-    document.getElementById('savings').innerHTML = savingsHTML;
-}
-
-function calculateTimeSaved(paymentsSaved, paymentFrequency) {
-    const yearsSaved = Math.floor(paymentsSaved / paymentFrequency);
-    const monthsSaved = Math.round((paymentsSaved % paymentFrequency) * (12 / paymentFrequency));
-    
-    let timeSaved = '';
-    if (yearsSaved > 0) {
-        timeSaved += `${yearsSaved} year${yearsSaved > 1 ? 's' : ''}`;
+    function updateLoan(id) {
+        const loan = loans.find(l => l.id === id);
+        loan.amount = parseFloat(document.getElementById(`amount-${id}`).value);
+        loan.interestRate = parseFloat(document.getElementById(`interest-${id}`).value);
+        loan.term = parseFloat(document.getElementById(`term-${id}`).value);
+        loan.extraPayment = parseFloat(document.getElementById(`extra-${id}`).value);
+        calculateAndRender();
     }
-    if (monthsSaved > 0) {
-        timeSaved += `${timeSaved ? ' and ' : ''}${monthsSaved} month${monthsSaved > 1 ? 's' : ''}`;
-    }
-    return timeSaved || 'No time saved';
-}
 
-function createCharts(schedule) {
-    const chartsSection = document.getElementById('charts');
-    chartsSection.classList.remove('hidden');
-
-    createPaymentBreakdownChart(schedule);
-    createBalanceOverTimeChart(schedule);
-}
-
-function createPaymentBreakdownChart(schedule) {
-    const ctx = document.getElementById('payment-breakdown-chart').getContext('2d');
-    
-    const totalPrincipal = schedule.reduce((sum, payment) => sum + payment.principal, 0);
-    const totalInterest = schedule.reduce((sum, payment) => sum + payment.interest, 0);
-    const totalExtraPayments = schedule.reduce((sum, payment) => sum + payment.extraPayment, 0);
-
-    new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: ['Principal', 'Interest', 'Extra Payments'],
-            datasets: [{
-                data: [totalPrincipal, totalInterest, totalExtraPayments],
-                backgroundColor: ['#2ecc71', '#e74c3c', '#3498db']
-            }]
-        },
-        options: {
-            responsive: true,
-            title: {
-                display: true,
-                text: 'Payment Breakdown'
+    function removeLoan(id) {
+        loans = loans.filter(l => l.id !== id);
+        const loanCard = document.querySelector(`.loan-card:has(#amount-${id})`);
+        anime({
+            targets: loanCard,
+            opacity: 0,
+            translateY: 20,
+            duration: 500,
+            easing: 'easeOutQuad',
+            complete: function() {
+                loanCard.remove();
+                calculateAndRender();
             }
-        }
-    });
-}
+        });
+    }
 
-function createBalanceOverTimeChart(schedule) {
-    const ctx = document.getElementById('balance-over-time-chart').getContext('2d');
-    
-    const labels = schedule.map(payment => formatDate(payment.date));
-    const balances = schedule.map(payment => payment.balance);
+    function calculateAndRender() {
+        const taxRate = parseFloat(document.getElementById('tax-rate').value) / 100;
+        const inflationRate = parseFloat(document.getElementById('inflation-rate').value) / 100;
 
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Loan Balance',
-                data: balances,
-                borderColor: '#2980b9',
-                fill: false
-            }]
-        },
-        options: {
-            responsive: true,
-            title: {
-                display: true,
-                text: 'Loan Balance Over Time'
-            },
-            scales: {
-                x: {
-                    display: true,
-                    title: {
-                        display: true,
-                        text: 'Date'
-                    }
-                },
-                y: {
-                    display: true,
-                    title: {
-                        display: true,
-                        text: 'Balance'
-                    },
-                    ticks: {
-                        callback: function(value, index, values) {
-                            return formatCurrency(value);
-                        }
-                    }
-                }
+        const results = loans.map(loan => calculateLoan(loan, taxRate, inflationRate));
+        renderResults(results);
+        renderCharts(results);
+        renderAmortizationSchedules(results);
+
+        resultsSection.classList.remove('hidden');
+        chartsSection.classList.remove('hidden');
+        amortizationSection.classList.remove('hidden');
+    }
+
+    function calculateLoan(loan, taxRate, inflationRate) {
+        const { amount, interestRate, term, extraPayment } = loan;
+        const monthlyRate = interestRate / 100 / 12;
+        const totalPayments = term * 12;
+        const monthlyPayment = (amount * monthlyRate * Math.pow(1 + monthlyRate, totalPayments)) / (Math.pow(1 + monthlyRate, totalPayments) - 1);
+
+        let balance = amount;
+        let totalInterest = 0;
+        let totalPaid = 0;
+        let months = 0;
+        const schedule = [];
+
+        while (balance > 0 && months < totalPayments) {
+            const interestPayment = balance * monthlyRate;
+            let principalPayment = monthlyPayment - interestPayment + extraPayment;
+            
+            if (principalPayment > balance) {
+                principalPayment = balance;
             }
+            
+            balance -= principalPayment;
+            totalInterest += interestPayment;
+            totalPaid += principalPayment + interestPayment;
+            months++;
+
+            schedule.push({
+                month: months,
+                payment: principalPayment + interestPayment,
+                principal: principalPayment,
+                interest: interestPayment,
+                balance: balance,
+                totalInterest: totalInterest,
+                totalPaid: totalPaid
+            });
         }
-    });
-}
 
-function displayAmortizationSchedule(schedule) {
-    const amortizationSection = document.getElementById('amortization-schedule');
-    amortizationSection.classList.remove('hidden');
+        const taxDeduction = totalInterest * taxRate;
+        const effectiveInterestRate = (totalInterest - taxDeduction) / amount * 100;
+        const realCostOfLoan = calculateRealCost(totalPaid, inflationRate, months);
 
-    const tableBody = document.querySelector('#schedule-table tbody');
-    tableBody.innerHTML = '';
+        return {
+            ...loan,
+            monthlyPayment,
+            totalInterest,
+            totalPaid,
+            months,
+            taxDeduction,
+            effectiveInterestRate,
+            realCostOfLoan,
+            schedule
+        };
+    }
 
-    schedule.forEach(payment => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${payment.paymentNumber}</td>
-            <td>${formatDate(payment.date)}</td>
-            <td>${formatCurrency(payment.payment)}</td>
-            <td>${formatCurrency(payment.principal)}</td>
-            <td>${formatCurrency(payment.interest)}</td>
-            <td>${formatCurrency(payment.extraPayment)}</td>
-            <td>${formatCurrency(payment.balance)}</td>
-        `;
-        tableBody.appendChild(row);
-    });
-}
+    function calculateRealCost(nominalCost, inflationRate, months) {
+        const monthlyInflationRate = Math.pow(1 + inflationRate, 1/12) - 1;
+        let realCost = 0;
+        for (let i = 0; i < months; i++) {
+            realCost += nominalCost / months / Math.pow(1 + monthlyInflationRate, i);
+        }
+        return realCost;
+    }
 
-function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-}
-
-function formatDate(date) {
-    return new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(date);
-}
+    function renderResults(results) {
+        resultsContainer.innerHTML = '';
+        results.forEach((result, index) => {
+            const resultCard = document.createElement('div');
+            resultCard.className = 'result-card';
+            resultCard.innerHTML = `
+                <h3>Loan ${index + 1} Results</h3>
+                <p>Monthly Payment: $${result.monthlyPayment.toFixed(2)}</p>
+                <p>Total Interest: $${result.totalInterest.toFixe
