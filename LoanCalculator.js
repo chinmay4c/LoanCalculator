@@ -179,7 +179,89 @@ const LoanCalculator = () => {
     ));
   };
 
+  const renderBalanceChart = () => {
+    return (
+      <ResponsiveContainer width="100%" height={400}>
+        <LineChart data={comparisonData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="month" label={{ value: 'Months', position: 'insideBottomRight', offset: -10 }} />
+          <YAxis label={{ value: 'Balance ($)', angle: -90, position: 'insideLeft' }} />
+          <Tooltip />
+          <Legend />
+          {loans.map((loan, index) => (
+            <Line
+              key={loan.id}
+              type="monotone"
+              dataKey={`loan${index + 1}Balance`}
+              stroke={COLORS[index % COLORS.length]}
+              name={`Loan ${index + 1} Balance`}
+            />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+    );
+  };
 
+  const renderTotalPaidChart = () => {
+    return (
+      <ResponsiveContainer width="100%" height={400}>
+        <LineChart data={comparisonData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="month" label={{ value: 'Months', position: 'insideBottomRight', offset: -10 }} />
+          <YAxis label={{ value: 'Total Paid ($)', angle: -90, position: 'insideLeft' }} />
+          <Tooltip />
+          <Legend />
+          {loans.map((loan, index) => (
+            <Line
+              key={loan.id}
+              type="monotone"
+              dataKey={`loan${index + 1}TotalPaid`}
+              stroke={COLORS[index % COLORS.length]}
+              name={`Loan ${index + 1} Total Paid`}
+            />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  const renderInterestVsPrincipalChart = () => {
+    const data = results.map((result, index) => ({
+      name: `Loan ${index + 1}`,
+      principal: result.totalPaid - result.totalInterest,
+      interest: result.totalInterest
+    }));
+
+    return (
+      <ResponsiveContainer width="100%" height={400}>
+        <PieChart>
+          <Pie
+            data={data}
+            dataKey="principal"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            outerRadius={60}
+            fill="#8884d8"
+            label
+          />
+          <Pie
+            data={data}
+            dataKey="interest"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            innerRadius={70}
+            outerRadius={90}
+            fill="#82ca9d"
+            label
+          />
+          <Tooltip />
+          <Legend />
+        </PieChart>
+      </ResponsiveContainer>
+    );
+  };
 
   return (
     <div className="loan-calculator">
